@@ -28,12 +28,15 @@ def rotate_image(mat, angle):
     rotation_mat[0, 2] += bound_w/2 - image_center[0]
     rotation_mat[1, 2] += bound_h/2 - image_center[1]
 
-    # rotate image with the new bounds and translated rotation matrix
+    # rotate image with the new bounds and translated rotation matrix and fills the corners with white color
     rotated_mat = cv2.warpAffine(mat, rotation_mat, (bound_w, bound_h), borderValue=(255,255,255))
     return rotated_mat
 
-
-def ger_confidence(capture, template, angle, method):
+def get_confidence(capture, template, angle, method):
+        """
+        Gets the template mathing confidence of the image template against the captured image 
+        with a rotation of angle degrees arround the template center
+        """
         templateRotated = rotate_image(template, angle)
         # Apply template Matching
         res = cv2.matchTemplate(img, templateRotated, method)
@@ -41,36 +44,71 @@ def ger_confidence(capture, template, angle, method):
         return confidence
 
 def match(capture, template):
+        """
+        Runs the template matching for all whole angles between 0 and 360
+        and determines which is the one the best score
+        Returns top left and bottom right coordinates of the bounding box containing the item,
+        the mathing score and the rotation angle in degrees
+        """
         method = eval('cv2.TM_CCOEFF_NORMED')
         angle_range = range(0, 360, 1)
-        values = [ger_confidence(capture, template, angle, method) for angle in angle_range]
+        values = [get_confidence(capture, template, angle, method) for angle in angle_range]
         max_idx = values.index(max(values))
         best_angle = angle_range[max_idx]
-        print("best rotation angle: " + str(best_angle))
         templateRotated = rotate_image(template, best_angle)
-        cv2.imwrite("rotated_template.png", templateRotated)
+        # cv2.imwrite("rotated_template.png", templateRotated)
         # Apply template Matching
         res = cv2.matchTemplate(img, templateRotated, method)
         _, confidence, _, max_loc = cv2.minMaxLoc(res)
         top_left = max_loc
         width, height = templateRotated.shape[::-1]
         bottom_right = (top_left[0] + width, top_left[1] + height)
-        return top_left, bottom_right, confidence
+        return top_left, bottom_right, confidence, best_angle
 
+def calc_offset(top_left, bottom_right, img, template, tool_length):
+        """
+        Calculates the horizontal and vertical offset in millimeters from the
+        center of the captured image to the center of the tool
+        """
+        tl = np.asarray(top_left)
+        br = np.asarray(bottom_right)
+        centroid = (tl + br) / 2        
+        width_pixels, height_pixels = img.shape[::-1]
+        image_center = np.asarray([width_pixels / 2, height_pixels / 2])
+        offset = centroid - image_center
+        _, height_pixels_tool = template.shape[::-1]
+        offset *= tool_length / height_pixels_tool
+        return centroid, offset
+
+### Main execution ##########################################
 img = cv2.imread('capture3.png', 0)
 img2 = img.copy()
 template = cv2.imread('hammer.png', 0)
 
-top_left, bottom_right, confidence = match(img, template)
+top_left, bottom_right, confidence, angle = match(img, template)
+
 print("top_left point:")
 print(top_left)
 print("bottom right point:")
 print(bottom_right)
 print("confidence level:")
 print(confidence)
+print("rotation angle")
+print(angle)
 
+centroid, offset = calc_offset(top_left, bottom_right, img, template, 350)
+
+print("centroid:")
+print(centroid)
+print("offset from the center in milimeters: ")
+print(offset)
+
+###### Ploting results ############
+centroid = (centroid[0], centroid[1])
 cv2.rectangle(img,top_left, bottom_right, 255, 2)
-
+cv2.circle(img, centroid, 5, 255,2) 
 plt.imshow(img)
 plt.title('Detected Point'), plt.xticks([]), plt.yticks([])
 plt.show()
+
+#### End of program ###############
