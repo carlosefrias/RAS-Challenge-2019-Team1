@@ -255,6 +255,27 @@ if __name__ == '__main__':
 
 	t.sleep(1)
 
+	print "Moving to intermediate position"
+
+	# MOVE ARM TO INTERMEDIATE POSITION
+	my_client.send_command('setPosition -35.01 44.27 64.70 -85.20 -42.12 78.10 47.29')
+
+	[A1, A2, A3, A4, A5, A6, A7], time = my_client.JointPosition 
+
+	current_pos = [A1, A2, A3, A4, A5, A6, A7]
+
+	i = 0
+
+	# LOOP THROUGH EACH JOINT AND WAIT FOR IT TO REACH DESIRED POSITION WITHIN 0.5 DEGREES
+	for desired_pos in intermediate_pos:
+		while((current_pos[i] > desired_pos+0.5) or (current_pos[i] < desired_pos-0.5)):
+			print "Waiting for joint " + str(i) + " to reach desired position"
+			[A1, A2, A3, A4, A5, A6, A7], time = my_client.JointPosition 
+			current_pos = [A1, A2, A3, A4, A5, A6, A7]
+			t.sleep(1)
+		i += 1
+
+
 
 	print "Picking up screwdriver"
 
