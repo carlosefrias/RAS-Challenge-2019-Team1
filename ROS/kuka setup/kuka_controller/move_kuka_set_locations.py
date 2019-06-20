@@ -13,22 +13,21 @@
 #######################################################################################################################
 from client_lib import *
 import rospy
-import time
+import time as t
 import tf
 from std_msgs.msg import String
-from std_msgs.msg import Float
+from std_msgs.msg import Float64
 
 
-object_pub = rospy.Publisher('object_to_grab', String, queue_size=10)
-
+# Making a connection object.
+my_client = kuka_iiwa_ros_client()
 
 def setup():
 
-	global my_client
 
-	# Making a connection object.
-	my_client = kuka_iiwa_ros_client()
+	print "Connecting to robot"
 
+	
 	# Wait until iiwa is connected zzz!
 	while (not my_client.isready): pass
 	print('Started!')
@@ -42,12 +41,30 @@ def setup():
 	#my_client.send_command('setCartVelocity 10000')     # If the CartVelocity is not set, the defult value is 100
 	my_client.send_command('setCartVelocity 50')
 
+
 	print "Going home"
 
-	# Move close to a start position.
-	my_client.send_command('setPosition -38.37 16.26 64.70 -57.43 -19.09 115.66 18.84')
+	home_pos = [2.09, 23.84, 17.67, -57.30, -8.77, 106.15, 15.97]
 
-	time.sleep(10)
+	# Move close to a start position.
+	my_client.send_command('setPosition 2.09 23.84 17.67 -57.30 -8.77 106.15 15.97')
+
+	[A1, A2, A3, A4, A5, A6, A7], time = my_client.JointPosition 
+
+	current_pos = [A1, A2, A3, A4, A5, A6, A7]
+
+	i = 0
+
+	# LOOP THROUGH EACH JOINT AND WAIT FOR IT TO REACH DESIRED POSITION WITHIN 0.5 DEGREES
+	for desired_pos in home_pos:
+		while((current_pos[i] > desired_pos+0.5) or (current_pos[i] < desired_pos-0.5)):
+			print "Waiting for joint " + str(i) + " to reach desired position"
+			[A1, A2, A3, A4, A5, A6, A7], time = my_client.JointPosition 
+			current_pos = [A1, A2, A3, A4, A5, A6, A7]
+			t.sleep(1)
+		i += 1
+
+	t.sleep(1)
 
 
 
@@ -60,50 +77,310 @@ if __name__ == '__main__':
 
 	print "Done robot setup"
 
+
 	print "Picking up hammer"
 
-	my_client.send_command('setPosition -34.58 74.05 64.69 -67.87 -67.34 75.37 25.28')
+	intermediate_pos = [-35.01, 44.27, 64.70, -85.20, -42.12, 78.10, 47.29]
 
-	time.sleep(10)
+	hammer_pos = [-27.77, 34.34, 18.18, -117.14, -18.35, 32.84, 88.12]
+	#hammer_pos = [463, -62, 235, -180, 4.8, 178]
+
+	my_client.send_command('setPosition -27.77 34.34 18.18 -117.14 -18.35 32.84 88.12')
+
+	[A1, A2, A3, A4, A5, A6, A7], time = my_client.JointPosition 
+
+	current_pos = [A1, A2, A3, A4, A5, A6, A7]
+
+	i = 0
+
+	# LOOP THROUGH EACH JOINT AND WAIT FOR IT TO REACH DESIRED POSITION WITHIN 0.5 DEGREES
+	for desired_pos in hammer_pos:
+		while((current_pos[i] > desired_pos+0.5) or (current_pos[i] < desired_pos-0.5)):
+			print "Waiting for joint " + str(i) + " to reach desired position"
+			[A1, A2, A3, A4, A5, A6, A7], time = my_client.JointPosition 
+			current_pos = [A1, A2, A3, A4, A5, A6, A7]
+			t.sleep(1)
+		i += 1
+
+	t.sleep(1)
 
 	my_client.close_grippers();
+
+	t.sleep(1)
+
+
+	print "Moving to intermediate position"
+
+	# MOVE ARM TO INTERMEDIATE POSITION
+	my_client.send_command('setPosition -35.01 44.27 64.70 -85.20 -42.12 78.10 47.29')
+
+	[A1, A2, A3, A4, A5, A6, A7], time = my_client.JointPosition 
+
+	current_pos = [A1, A2, A3, A4, A5, A6, A7]
+
+	i = 0
+
+	# LOOP THROUGH EACH JOINT AND WAIT FOR IT TO REACH DESIRED POSITION WITHIN 0.5 DEGREES
+	for desired_pos in intermediate_pos:
+		while((current_pos[i] > desired_pos+0.5) or (current_pos[i] < desired_pos-0.5)):
+			print "Waiting for joint " + str(i) + " to reach desired position"
+			[A1, A2, A3, A4, A5, A6, A7], time = my_client.JointPosition 
+			current_pos = [A1, A2, A3, A4, A5, A6, A7]
+			t.sleep(1)
+		i += 1
+
 
 	print "Placing hammer"
 
-	my_client.send_command('setPosition -35.01 44.27 64.70 -85.20 -42.12 78.10 47.29')
+	hammer_place_pos = [-41.34, 76.29, 64.69, -60.92, -63.93, 78.32, 106.16]
 
 	my_client.send_command('setPosition -41.34 76.29 64.69 -60.92 -63.93 78.32 106.16')
 
-	time.sleep(10)
+	[A1, A2, A3, A4, A5, A6, A7], time = my_client.JointPosition 
+
+	current_pos = [A1, A2, A3, A4, A5, A6, A7]
+
+	i = 0
+
+	# LOOP THROUGH EACH JOINT AND WAIT FOR IT TO REACH DESIRED POSITION WITHIN 0.5 DEGREES
+	for desired_pos in hammer_place_pos:
+		while((current_pos[i] > desired_pos+0.5) or (current_pos[i] < desired_pos-0.5)):
+			print "Waiting for joint " + str(i) + " to reach desired position"
+			[A1, A2, A3, A4, A5, A6, A7], time = my_client.JointPosition 
+			current_pos = [A1, A2, A3, A4, A5, A6, A7]
+			t.sleep(1)
+		i += 1
+
+	t.sleep(1)
 
 	my_client.open_grippers();
+
+	t.sleep(1)
+
+
+	print "Moving to intermediate position"
+
+	# MOVE ARM TO INTERMEDIATE POSITION
+	my_client.send_command('setPosition -35.01 44.27 64.70 -85.20 -42.12 78.10 47.29')
+
+	[A1, A2, A3, A4, A5, A6, A7], time = my_client.JointPosition 
+
+	current_pos = [A1, A2, A3, A4, A5, A6, A7]
+
+	i = 0
+
+	# LOOP THROUGH EACH JOINT AND WAIT FOR IT TO REACH DESIRED POSITION WITHIN 0.5 DEGREES
+	for desired_pos in intermediate_pos:
+		while((current_pos[i] > desired_pos+0.5) or (current_pos[i] < desired_pos-0.5)):
+			print "Waiting for joint " + str(i) + " to reach desired position"
+			[A1, A2, A3, A4, A5, A6, A7], time = my_client.JointPosition 
+			current_pos = [A1, A2, A3, A4, A5, A6, A7]
+			t.sleep(1)
+		i += 1
+
 
 	print "Picking up spanner"
 
-	my_client.send_command('setPosition -35.01 44.27 64.70 -85.20 -42.12 78.10 47.29')
+	spanner_pos = [-7.68, 48.99, 18.17, -87.38, -20.32, 47.89, 21.15]
 
-	my_client.send_command('setPosition -48.07 60.85 64.70 -109.04 -68.12 61.85 60.84')
+	my_client.send_command('setPosition -7.68 48.99 18.17 -87.38 -20.32 47.89 21.15')
 
-	time.sleep(10)
+	[A1, A2, A3, A4, A5, A6, A7], time = my_client.JointPosition 
+
+	current_pos = [A1, A2, A3, A4, A5, A6, A7]
+
+	i = 0
+
+	# LOOP THROUGH EACH JOINT AND WAIT FOR IT TO REACH DESIRED POSITION WITHIN 0.5 DEGREES
+	for desired_pos in spanner_pos:
+		while((current_pos[i] > desired_pos+0.5) or (current_pos[i] < desired_pos-0.5)):
+			print "Waiting for joint " + str(i) + " to reach desired position"
+			[A1, A2, A3, A4, A5, A6, A7], time = my_client.JointPosition 
+			current_pos = [A1, A2, A3, A4, A5, A6, A7]
+			t.sleep(1)
+		i += 1
+
+	t.sleep(1)
 
 	my_client.close_grippers();
 
+	t.sleep(1)
+
+
+	print "Moving to intermediate position"
+
+	# MOVE ARM TO INTERMEDIATE POSITION
+	my_client.send_command('setPosition -35.01 44.27 64.70 -85.20 -42.12 78.10 47.29')
+
+	[A1, A2, A3, A4, A5, A6, A7], time = my_client.JointPosition 
+
+	current_pos = [A1, A2, A3, A4, A5, A6, A7]
+
+	i = 0
+
+	# LOOP THROUGH EACH JOINT AND WAIT FOR IT TO REACH DESIRED POSITION WITHIN 0.5 DEGREES
+	for desired_pos in intermediate_pos:
+		while((current_pos[i] > desired_pos+0.5) or (current_pos[i] < desired_pos-0.5)):
+			print "Waiting for joint " + str(i) + " to reach desired position"
+			[A1, A2, A3, A4, A5, A6, A7], time = my_client.JointPosition 
+			current_pos = [A1, A2, A3, A4, A5, A6, A7]
+			t.sleep(1)
+		i += 1
+
+
 	print "Placing spanner"
 
-	my_client.send_command('setPosition -35.01 44.27 64.70 -85.20 -42.12 78.10 47.29')
+	spanner_place_pos =[-72.69, 57.76, 64.70, -115.42, -65.18, 58.75, 113.75]
 
 	my_client.send_command('setPosition -72.69 57.76 64.70 -115.42 -65.18 58.75 113.75')
 
-	time.sleep(10)
+	[A1, A2, A3, A4, A5, A6, A7], time = my_client.JointPosition 
+
+	current_pos = [A1, A2, A3, A4, A5, A6, A7]
+
+	i = 0
+
+	# LOOP THROUGH EACH JOINT AND WAIT FOR IT TO REACH DESIRED POSITION WITHIN 0.5 DEGREES
+	for desired_pos in spanner_place_pos:
+		while((current_pos[i] > desired_pos+0.5) or (current_pos[i] < desired_pos-0.5)):
+			print "Waiting for joint " + str(i) + " to reach desired position"
+			[A1, A2, A3, A4, A5, A6, A7], time = my_client.JointPosition 
+			current_pos = [A1, A2, A3, A4, A5, A6, A7]
+			t.sleep(1)
+		i += 1
+
+	t.sleep(1)
 
 	my_client.open_grippers();
 
-	time.sleep(2)
+	t.sleep(1)
+
+	print "Moving to intermediate position"
+
+	# MOVE ARM TO INTERMEDIATE POSITION
+	my_client.send_command('setPosition -35.01 44.27 64.70 -85.20 -42.12 78.10 47.29')
+
+	[A1, A2, A3, A4, A5, A6, A7], time = my_client.JointPosition 
+
+	current_pos = [A1, A2, A3, A4, A5, A6, A7]
+
+	i = 0
+
+	# LOOP THROUGH EACH JOINT AND WAIT FOR IT TO REACH DESIRED POSITION WITHIN 0.5 DEGREES
+	for desired_pos in intermediate_pos:
+		while((current_pos[i] > desired_pos+0.5) or (current_pos[i] < desired_pos-0.5)):
+			print "Waiting for joint " + str(i) + " to reach desired position"
+			[A1, A2, A3, A4, A5, A6, A7], time = my_client.JointPosition 
+			current_pos = [A1, A2, A3, A4, A5, A6, A7]
+			t.sleep(1)
+		i += 1
+
+
+
+	print "Picking up screwdriver"
+
+	screwdriver_pos = [0.0, 51.71, 18.17, -80.86, -19.74, 51.70, 26.83]
+
+	my_client.send_command('setPosition 0.0 51.71 18.17 -80.86 -19.74 51.70 26.83')
+
+	[A1, A2, A3, A4, A5, A6, A7], time = my_client.JointPosition 
+
+	current_pos = [A1, A2, A3, A4, A5, A6, A7]
+
+	i = 0
+
+	# LOOP THROUGH EACH JOINT AND WAIT FOR IT TO REACH DESIRED POSITION WITHIN 0.5 DEGREES
+	for desired_pos in screwdriver_pos:
+		while((current_pos[i] > desired_pos+0.5) or (current_pos[i] < desired_pos-0.5)):
+			print "Waiting for joint " + str(i) + " to reach desired position"
+			[A1, A2, A3, A4, A5, A6, A7], time = my_client.JointPosition 
+			current_pos = [A1, A2, A3, A4, A5, A6, A7]
+			t.sleep(1)
+		i += 1
+
+	t.sleep(1)
+
+	my_client.close_grippers();
+
+	t.sleep(1)
+
+
+	print "Moving to intermediate position"
+
+	# MOVE ARM TO INTERMEDIATE POSITION
+	my_client.send_command('setPosition -35.01 44.27 64.70 -85.20 -42.12 78.10 47.29')
+
+	[A1, A2, A3, A4, A5, A6, A7], time = my_client.JointPosition 
+
+	current_pos = [A1, A2, A3, A4, A5, A6, A7]
+
+	i = 0
+
+	# LOOP THROUGH EACH JOINT AND WAIT FOR IT TO REACH DESIRED POSITION WITHIN 0.5 DEGREES
+	for desired_pos in intermediate_pos:
+		while((current_pos[i] > desired_pos+0.5) or (current_pos[i] < desired_pos-0.5)):
+			print "Waiting for joint " + str(i) + " to reach desired position"
+			[A1, A2, A3, A4, A5, A6, A7], time = my_client.JointPosition 
+			current_pos = [A1, A2, A3, A4, A5, A6, A7]
+			t.sleep(1)
+		i += 1
+
+
+	print "Placing screwdriver"
+
+	screwdriver_place_pos = [582.37, 90.48, 231.78, -180, 1.04, -90.37]
+
+	my_client.send_command('setPositionXYZABC 582.37 90.48 231.78 -180 1.04 -90.37')
+
+	[X, Y, Z, A, B, C], time = my_client.ToolPosition 
+
+	current_pos = [X, Y, Z, A, B, C]
+
+	i = 0
+
+	# LOOP THROUGH EACH AXIS AND WAIT FOR IT TO REACH DESIRED POSITION WITHIN 1mm
+	for desired_pos in screwdriver_place_pos:
+		while((current_pos[i] > desired_pos+1) or (current_pos[i] < desired_pos-1)):
+			print "Waiting for axis " + str(current_pos[i]) + " to reach desired position"
+			[X, Y, Z, A, B, C], time = my_client.ToolPosition 
+			current_pos = [X, Y, Z, A, B, C]
+			t.sleep(1)
+		i += 1
+
+	t.sleep(1)
+
+	my_client.open_grippers();
+
+	t.sleep(2)
+
 
 	print "Returning home"
 
+	home_pos = [2.09, 23.84, 17.67, -57.30, -8.77, 106.15, 15.97]
+
 	# Move close to a start position.
-	my_client.send_command('setPosition -38.37 16.26 64.70 -57.43 -19.09 115.66 18.84')
+	my_client.send_command('setPosition 2.09 23.84 17.67 -57.30 -8.77 106.15 15.97')
+
+	[A1, A2, A3, A4, A5, A6, A7], time = my_client.JointPosition 
+
+	current_pos = [A1, A2, A3, A4, A5, A6, A7]
+
+	i = 0
+
+	# LOOP THROUGH EACH JOINT AND WAIT FOR IT TO REACH DESIRED POSITION WITHIN 0.5 DEGREES
+	for desired_pos in home_pos:
+		while((current_pos[i] > desired_pos+0.5) or (current_pos[i] < desired_pos-0.5)):
+			print "Waiting for joint " + str(i) + " to reach desired position"
+			[A1, A2, A3, A4, A5, A6, A7], time = my_client.JointPosition 
+			current_pos = [A1, A2, A3, A4, A5, A6, A7]
+			t.sleep(1)
+		i += 1
+
+	t.sleep(1)
+
+	print "*****************"
+	print "****** END ******"
+	print "*****************"
 
 
 
