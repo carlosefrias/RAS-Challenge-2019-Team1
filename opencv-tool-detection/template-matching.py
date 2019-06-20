@@ -52,7 +52,7 @@ def match(capture, template):
         the matching score and the rotation angle in degrees
         """
         method = eval('cv2.TM_CCOEFF_NORMED')
-        angle_range = range(0, 360, 1)
+        angle_range = range(-180, 180, 1)
         values = [get_confidence(capture, template, angle, method) for angle in angle_range]
         max_idx = values.index(max(values))
         best_angle = angle_range[max_idx]
@@ -73,7 +73,7 @@ def calc_offset(top_left, bottom_right, img, template, tool_length):
         """
         tl = np.asarray(top_left)
         br = np.asarray(bottom_right)
-        centroid = (tl + br) / 2        
+        centroid = (tl + br) / 2
         width_pixels, height_pixels = img.shape[::-1]
         image_center = np.asarray([width_pixels / 2, height_pixels / 2])
         offset = centroid - image_center
@@ -81,46 +81,88 @@ def calc_offset(top_left, bottom_right, img, template, tool_length):
         offset *= tool_length / height_pixels_tool
         return centroid, offset
 
+def calc_picking_point(centroid, dist, angle, template, tool_length):
+        x_offset = dist * np.cos(np.radians(angle))
+        print(x_offset)
+        y_offset = dist * np.sin(np.radians(angle))
+        print(y_offset)
+        offset = [x_offset, y_offset]
+        point = centroid + offset
+        print(point)
+        _, height_pixels_tool = template.shape[::-1]
+        point *= height_pixels_tool / tool_length
+        return point
+
+def get_point(img, tool_name):
+        indx = 0
+        if (tool_name == "hammer"):
+                indx = 0
+        elif (tool_name == "spanner"):
+                indx = 1
+        elif (tool_name == "screw-driver"):
+                indx = 2
+        else:
+                ind = -1
+
+        tools = ["hammer", "spanner", "screw-driver"]
+        lengths = [300, 240, 290]
+        gripping_distance = [110, 0, 100]
+
+        tool = tools[indx]
+        length = lengths[indx]
+        dist = gripping_distance[indx]
+        template = cv2.imread(tool + '.png', 0)
+        top_left, bottom_right, confidence, angle = match(img, template)
+
+        centroid, offset = calc_offset(top_left, bottom_right, img, template, length)
+        return centroid, offset, angle
+        
 ### Main execution ##########################################
-img = cv2.imread('capture3.png', 0)
-img2 = img.copy()
+# img = cv2.imread('capture5.png', 0)
+# img2 = img.copy()
 
-hammer = "hammer"
-spanner = "spanner"
-screw_driver = "screw_driver"
+# tools = ["hammer", "spanner", "screw-driver"]
+# lengths = [300, 240, 290]
+# gripping_distance = [110, 0, 100]
 
-tool = hammer
+# tool = tools[2]
+# length = lengths[2]
+# dist = gripping_distance[2]
 
-template = cv2.imread(tool + '.png', 0)
+# template = cv2.imread(tool + '.png', 0)
 
+# start = time.time()
+# top_left, bottom_right, confidence, angle = match(img, template)
 
-start = time.time()
-top_left, bottom_right, confidence, angle = match(img, template)
+# centroid, offset = calc_offset(top_left, bottom_right, img, template, length)
+# # point  = calc_picking_point(centroid, dist, angle, template, length)
+# print("elapsed time:")
+# print(time.time() - start)
 
-centroid, offset = calc_offset(top_left, bottom_right, img, template, 350)
-print("elapsed time:")
-print(time.time() - start)
+# print("top_left point:")
+# print(top_left)
+# print("bottom right point:")
+# print(bottom_right)
+# print("confidence level:")
+# print(confidence)
+# print("rotation angle")
+# print(angle)
 
-print("top_left point:")
-print(top_left)
-print("bottom right point:")
-print(bottom_right)
-print("confidence level:")
-print(confidence)
-print("rotation angle")
-print(angle)
+# print("centroid:")
+# print(centroid)
+# print("offset from the center in milimeters: ")
+# print(offset)
 
-print("centroid:")
-print(centroid)
-print("offset from the center in milimeters: ")
-print(offset)
+# # print("point")
+# # print(point)
 
-###### Ploting results ############
-centroid = (centroid[0], centroid[1])
-cv2.rectangle(img,top_left, bottom_right, 0, 2)
-cv2.circle(img, centroid, 5, 0,2) 
-plt.imshow(img,cmap = 'gray')
-plt.title('Detected ' + tool), plt.xticks([]), plt.yticks([])
-plt.show()
-
+# ###### Ploting results ############
+# centroid = (centroid[0], centroid[1])
+# cv2.rectangle(img,top_left, bottom_right, 0, 2)
+# cv2.circle(img, centroid, 5, 0,2) 
+# # point = (int(point[0]), int(point[1]))
+# # cv2.circle(img, point, 5, 255,2) 
+# plt.imshow(img,cmap = 'gray')
+# plt.title('Detected ' + tool), plt.xticks([]), plt.yticks([])
+# plt.show()
 #### End of program ###############
