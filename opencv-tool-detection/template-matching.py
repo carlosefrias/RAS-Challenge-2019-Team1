@@ -1,6 +1,6 @@
 import cv2
 import numpy as np
-
+import time
 import rospy, os
 
 from std_msgs.msg import String
@@ -34,10 +34,11 @@ def rotate_image(mat, angle):
 
 def get_confidence(capture, template, angle, method):
         """
-        Gets the template mathing confidence of the image template against the captured image 
-        with a rotation of angle degrees arround the template center
+        Gets the template matching confidence of the image template against the captured image 
+        with a rotation of angle degrees around the template center
         """
         templateRotated = rotate_image(template, angle)
+        # cv2.imwrite("rotated_template_" + str(angle) + ".png", templateRotated)
         # Apply template Matching
         res = cv2.matchTemplate(img, templateRotated, method)
         _, confidence, _, _ = cv2.minMaxLoc(res)
@@ -46,9 +47,9 @@ def get_confidence(capture, template, angle, method):
 def match(capture, template):
         """
         Runs the template matching for all whole angles between 0 and 360
-        and determines which is the one the best score
+        and determines which is the one with the best score
         Returns top left and bottom right coordinates of the bounding box containing the item,
-        the mathing score and the rotation angle in degrees
+        the matching score and the rotation angle in degrees
         """
         method = eval('cv2.TM_CCOEFF_NORMED')
         angle_range = range(0, 360, 1)
@@ -83,9 +84,22 @@ def calc_offset(top_left, bottom_right, img, template, tool_length):
 ### Main execution ##########################################
 img = cv2.imread('capture3.png', 0)
 img2 = img.copy()
-template = cv2.imread('hammer.png', 0)
 
+hammer = "hammer"
+spanner = "spanner"
+screw_driver = "screw_driver"
+
+tool = hammer
+
+template = cv2.imread(tool + '.png', 0)
+
+
+start = time.time()
 top_left, bottom_right, confidence, angle = match(img, template)
+
+centroid, offset = calc_offset(top_left, bottom_right, img, template, 350)
+print("elapsed time:")
+print(time.time() - start)
 
 print("top_left point:")
 print(top_left)
@@ -96,8 +110,6 @@ print(confidence)
 print("rotation angle")
 print(angle)
 
-centroid, offset = calc_offset(top_left, bottom_right, img, template, 350)
-
 print("centroid:")
 print(centroid)
 print("offset from the center in milimeters: ")
@@ -105,10 +117,10 @@ print(offset)
 
 ###### Ploting results ############
 centroid = (centroid[0], centroid[1])
-cv2.rectangle(img,top_left, bottom_right, 255, 2)
-cv2.circle(img, centroid, 5, 255,2) 
-plt.imshow(img)
-plt.title('Detected Point'), plt.xticks([]), plt.yticks([])
+cv2.rectangle(img,top_left, bottom_right, 0, 2)
+cv2.circle(img, centroid, 5, 0,2) 
+plt.imshow(img,cmap = 'gray')
+plt.title('Detected ' + tool), plt.xticks([]), plt.yticks([])
 plt.show()
 
 #### End of program ###############
