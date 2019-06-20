@@ -4,7 +4,7 @@ import time
 import rospy, os
 
 from std_msgs.msg import String
-# from matplotlib import pyplot as plt
+from matplotlib import pyplot as plt
 
 def rotate_image(mat, angle):
     """
@@ -99,7 +99,7 @@ def get_point(img, tool_name):
                 indx = 0
         elif (tool_name == "spanner"):
                 indx = 1
-        elif (tool_name == "screw-driver"):
+        elif (tool_name == "screwdriver"):
                 indx = 2
         else:
                 indx = -1
@@ -111,62 +111,62 @@ def get_point(img, tool_name):
         tool = tools[indx]
         length = lengths[indx]
         # dist = gripping_distance[indx]
-        print(tool + '.png')
         file_path = './%s.png' % tool
         template = cv2.imread(file_path, 0)
-        print(type(template))
         top_left, bottom_right, _, angle = match(img, template)
 
         centroid, offset = calc_offset(top_left, bottom_right, img, template, length)
         return centroid, offset, angle
         
 ### Main execution ##########################################
-# img = cv2.imread('capture5.png', 0)
+img = cv2.imread('capture5.png', 0)
+# centroid, offset, angle = get_point(img, "hammer")
 
-# get_point(img, "hammer")
-
-# tools = ["hammer", "spanner", "screw-driver"]
-# lengths = [300, 240, 290]
-# gripping_distance = [110, 0, 100]
-
-# tool = tools[2]
-# length = lengths[2]
-# dist = gripping_distance[2]
-
-# template = cv2.imread(tool + '.png', 0)
-
-# start = time.time()
-# top_left, bottom_right, confidence, angle = match(img, template)
-
-# centroid, offset = calc_offset(top_left, bottom_right, img, template, length)
-# # point  = calc_picking_point(centroid, dist, angle, template, length)
-# print("elapsed time:")
-# print(time.time() - start)
-
-# print("top_left point:")
-# print(top_left)
-# print("bottom right point:")
-# print(bottom_right)
-# print("confidence level:")
-# print(confidence)
-# print("rotation angle")
 # print(angle)
-
-# print("centroid:")
-# print(centroid)
-# print("offset from the center in milimeters: ")
 # print(offset)
+tools = ["hammer", "spanner", "screwdriver"]
+lengths = [300, 240, 290]
+gripping_distance = [110, 0, 100]
+indx = 2
 
-# # print("point")
-# # print(point)
+tool = tools[indx]
+length = lengths[indx]
+dist = gripping_distance[indx]
+
+template = cv2.imread(tool + '.png', 0)
+
+start = time.time()
+top_left, bottom_right, confidence, angle = match(img, template)
+
+centroid, offset = calc_offset(top_left, bottom_right, img, template, length)
+# point  = calc_picking_point(centroid, dist, angle, template, length)
+print("elapsed time:")
+print(time.time() - start)
+
+print("top_left point:")
+print(top_left)
+print("bottom right point:")
+print(bottom_right)
+print("confidence level:")
+print(confidence)
+print("rotation angle")
+print(angle)
+
+print("centroid:")
+print(centroid)
+print("offset from the center in milimeters: ")
+print(offset)
+
+# print("point")
+# print(point)
 
 # ###### Ploting results ############
-# centroid = (centroid[0], centroid[1])
-# cv2.rectangle(img,top_left, bottom_right, 0, 2)
-# cv2.circle(img, centroid, 5, 0,2) 
-# # point = (int(point[0]), int(point[1]))
-# # cv2.circle(img, point, 5, 255,2) 
-# plt.imshow(img,cmap = 'gray')
-# plt.title('Detected ' + tool), plt.xticks([]), plt.yticks([])
-# plt.show()
+centroid = (centroid[0], centroid[1])
+cv2.rectangle(img,top_left, bottom_right, 0, 2)
+cv2.circle(img, centroid, 7, 0,3) 
+# point = (int(point[0]), int(point[1]))
+# cv2.circle(img, point, 5, 255,2) 
+plt.imshow(img, cmap = 'gray')
+plt.title('Detected '), plt.xticks([]), plt.yticks([])
+plt.show()
 # #### End of program ###############
