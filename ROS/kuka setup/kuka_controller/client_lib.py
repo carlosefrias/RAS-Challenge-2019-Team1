@@ -52,6 +52,7 @@ class kuka_iiwa_ros_client:
         self.isCollision  = (False, None)
         self.isMastered = (False, None)
         self.OperationMode = (None, None)
+        self.Transcript = String()
 
         os.system('clear')
         print cl_pink('\n==========================================')
@@ -75,18 +76,32 @@ class kuka_iiwa_ros_client:
         rospy.Subscriber("isMastered", String, self.isMastered_callback)
         rospy.Subscriber("OperationMode", String, self.OperationMode_callback)
         rospy.Subscriber("isReadyToMove", String, self.isReadyToMove_callback)
-	rospy.Subscriber("moveit_iiwa", String, self.moveit_iiwa_callback)
+        rospy.Subscriber("transcript_topic", String, self.Transcript_callback)
+
 
         #   Make Publishers for kuka_iiwa commands
         self.pub_kuka_command = rospy.Publisher('kuka_command', String, queue_size=10)
 
-        #   Make kuka_iiwa client
+        # Publisher for Kuka API
+        self.pub_kuka_api = rospy.Publisher('moveit_iiwa', String, queue_size=10)
+
+        #   Make kuka_iiwa clientnt.send_command('setP
         rospy.init_node('kuka_iiwa_client', anonymous=False)
         self.rate = rospy.Rate(100) #    100hz update rate.
 
     #   ~M: __init__ ==========================
-    def moveit_iiwa_callback(self, data):
-	self.send_command(data.data)
+
+        # Sends the message to Kuka API asking the robot to open grippers
+    def open_grippers(self):
+        open_grippers_msg = 'OpenGripper'
+        self.pub_kuka_api.publish(open_grippers_msg)
+        self.pub_kuka_command.publish(open_grippers_msg)
+    
+    # Sends the message to Kuka API asking the robot to close grippers
+    def close_grippers(self):
+        close_grippers_msg = 'CloseGripper'
+        self.pub_kuka_api.publish(close_grippers_msg)
+        self.pub_kuka_command.publish(close_grippers_msg)
 
     def send_command(self, command_str):
         #rospy.loginfo(command_str)
@@ -160,6 +175,10 @@ class kuka_iiwa_ros_client:
     def JointJerk_callback(self, data):
         # e.g. 1.0 1459253274.11
         self.JointJerk = ( float(data.data.split(' ')[0]), float(data.data.split(' ')[1]) )
+
+    def Transcript_callback(self, data):
+        self.Transcript = data.data
+        print "I heard " + self.Transcript
     
     #   ~M: callbacks ===========================
 

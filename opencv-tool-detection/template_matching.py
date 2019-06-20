@@ -4,7 +4,7 @@ import time
 import rospy, os
 
 from std_msgs.msg import String
-from matplotlib import pyplot as plt
+# from matplotlib import pyplot as plt
 
 def rotate_image(mat, angle):
     """
@@ -40,7 +40,7 @@ def get_confidence(capture, template, angle, method):
         templateRotated = rotate_image(template, angle)
         # cv2.imwrite("rotated_template_" + str(angle) + ".png", templateRotated)
         # Apply template Matching
-        res = cv2.matchTemplate(img, templateRotated, method)
+        res = cv2.matchTemplate(capture, templateRotated, method)
         _, confidence, _, _ = cv2.minMaxLoc(res)
         return confidence
 
@@ -59,7 +59,7 @@ def match(capture, template):
         templateRotated = rotate_image(template, best_angle)
         # cv2.imwrite("rotated_template.png", templateRotated)
         # Apply template Matching
-        res = cv2.matchTemplate(img, templateRotated, method)
+        res = cv2.matchTemplate(capture, templateRotated, method)
         _, confidence, _, max_loc = cv2.minMaxLoc(res)
         top_left = max_loc
         width, height = templateRotated.shape[::-1]
@@ -102,24 +102,28 @@ def get_point(img, tool_name):
         elif (tool_name == "screw-driver"):
                 indx = 2
         else:
-                ind = -1
+                indx = -1
 
         tools = ["hammer", "spanner", "screw-driver"]
         lengths = [300, 240, 290]
-        gripping_distance = [110, 0, 100]
+        # gripping_distance = [110, 0, 100]
 
         tool = tools[indx]
         length = lengths[indx]
-        dist = gripping_distance[indx]
-        template = cv2.imread(tool + '.png', 0)
-        top_left, bottom_right, confidence, angle = match(img, template)
+        # dist = gripping_distance[indx]
+        print(tool + '.png')
+        file_path = './%s.png' % tool
+        template = cv2.imread(file_path, 0)
+        print(type(template))
+        top_left, bottom_right, _, angle = match(img, template)
 
         centroid, offset = calc_offset(top_left, bottom_right, img, template, length)
         return centroid, offset, angle
         
 ### Main execution ##########################################
 # img = cv2.imread('capture5.png', 0)
-# img2 = img.copy()
+
+# get_point(img, "hammer")
 
 # tools = ["hammer", "spanner", "screw-driver"]
 # lengths = [300, 240, 290]
@@ -165,4 +169,4 @@ def get_point(img, tool_name):
 # plt.imshow(img,cmap = 'gray')
 # plt.title('Detected ' + tool), plt.xticks([]), plt.yticks([])
 # plt.show()
-#### End of program ###############
+# #### End of program ###############
